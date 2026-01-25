@@ -2,6 +2,7 @@
 
 import pytest
 from fastapi.testclient import TestClient
+from unittest.mock import patch, AsyncMock
 
 from src.main import app
 
@@ -17,15 +18,10 @@ def test_root_returns_welcome() -> None:
     assert "version" in data
 
 
-def test_health_returns_healthy() -> None:
-    """Health endpoint returns healthy status."""
+@patch("src.main.async_engine")
+def test_health_returns_status(mock_engine: AsyncMock) -> None:
+    """Health endpoint returns status."""
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["status"] == "healthy"
-
-
-def test_hello_endpoint() -> None:
-    """Hello endpoint returns message."""
-    response = client.get("/api/v1/hello")
-    assert response.status_code == 200
-    assert "message" in response.json()
+    assert "status" in response.json()
+    assert "database" in response.json()

@@ -6,8 +6,10 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+from sqlalchemy import text
 
 from .config import get_config, get_settings
+from .database import async_engine, init_db
 from .logging import setup_logging
 from .models import HealthResponse, WelcomeResponse
 from .routes import router
@@ -18,6 +20,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler."""
     setup_logging()
     logger.info("Starting {{ cookiecutter.project_name }} API")
+    await init_db()
+    logger.info("Database initialized")
     yield
     logger.info("Shutting down {{ cookiecutter.project_name }} API")
 
@@ -63,8 +67,17 @@ async def root() -> WelcomeResponse:
 
 @app.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
-    """Health check endpoint."""
+    """Health check endpoint with database status."""
+    db_status = "disconnected"
+    try:
+        async with async_engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+            db_status = "connected"
+    except Exception as e:
+        logger.error(f"Database health check failed: {e}")
+
     return HealthResponse(
-        status="healthy",
+        status="healthy" if db_status == "connected" else "degraded",
         service="{{ cookiecutter.project_slug }}-backend",
+        database=db_status,
     )

@@ -1,7 +1,6 @@
 # =============================================================================
 # Application Configuration
 # =============================================================================
-# Non-sensitive settings only. Secrets go in .env file.
 
 [app]
 name = "{{ cookiecutter.project_name }}"
@@ -16,6 +15,7 @@ workers = 4
 cors_origins = [
     "https://{{ cookiecutter.project_slug }}.local",
     "http://localhost:{{ cookiecutter.frontend_port }}",
+    "http://{{ cookiecutter.project_slug }}.local",
 ]
 
 [logging]

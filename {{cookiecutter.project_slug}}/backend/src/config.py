@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     """Environment variables (secrets)."""
 
     secret_key: str = "change-me-in-production"
-    database_url: str | None = None
+    database_url: str = "mysql://user:password@db:3306/{{ cookiecutter.project_slug | replace('-', '_') }}"
     frontend_url: str = "https://{{ cookiecutter.project_slug }}.local"
 
     class Config:
