@@ -7,17 +7,20 @@ tasks:
       - task --list
 
   # ===========================================================================
-  # Setup & Development
+  # Setup
   # ===========================================================================
   setup:
     desc: Initial project setup (hosts, env, network)
     cmds:
       - ./scripts/setup.sh
 
+  # ===========================================================================
+  # Development
+  # ===========================================================================
   dev:
     desc: Start development environment with Traefik
+    deps: [setup]
     cmds:
-      - task: setup
       - ./scripts/dev.sh
 
   dev:logs:
@@ -33,8 +36,8 @@ tasks:
 
   dev:restart:
     desc: Restart development environment
+    deps: [dev:stop]
     cmds:
-      - task: dev:stop
       - task: dev
 
   dev:rebuild:
@@ -49,12 +52,19 @@ tasks:
   # ===========================================================================
   prod:
     desc: Start production environment (local testing)
+    deps: [prod:env]
+    cmds:
+      - ./scripts/prod.sh
+
+  prod:env:
+    desc: Setup production environment file
     cmds:
       - |
         if [ ! -f backend/.env ]; then
           cp backend/.env.example backend/.env
+          echo "Created backend/.env"
         fi
-      - ./scripts/prod.sh
+    silent: true
 
   prod:logs:
     desc: Show production logs
@@ -69,8 +79,8 @@ tasks:
 
   prod:restart:
     desc: Restart production environment
+    deps: [prod:stop]
     cmds:
-      - task: prod:stop
       - task: prod
 
   prod:clean:
@@ -84,8 +94,7 @@ tasks:
   # ===========================================================================
   build:
     desc: Build all Docker images
-    cmds:
-      - docker compose -f docker-compose.prod.yml build
+    deps: [build:frontend, build:backend]
 
   build:frontend:
     desc: Build frontend Docker image
@@ -129,12 +138,11 @@ tasks:
       - uv run python -m src.cli health
 
   # ===========================================================================
-  # Testing
+  # Testing & Linting
   # ===========================================================================
   test:
     desc: Run all tests
-    cmds:
-      - task: test:backend
+    deps: [test:backend]
 
   test:backend:
     desc: Run backend tests
@@ -143,7 +151,11 @@ tasks:
       - uv run pytest
 
   lint:
-    desc: Run linters
+    desc: Run all linters
+    deps: [lint:backend]
+
+  lint:backend:
+    desc: Lint backend code
     dir: backend
     cmds:
       - uv run ruff check .
