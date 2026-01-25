@@ -21,6 +21,7 @@ __pycache__/
 # Testing outputs
 output/
 test-output/
+tmp/
 
 # Environment
 .env
