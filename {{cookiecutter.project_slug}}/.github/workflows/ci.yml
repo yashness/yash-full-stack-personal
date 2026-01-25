@@ -1,0 +1,105 @@
+# =============================================================================
+# CI Build Matrix
+# =============================================================================
+# Validates Docker builds and runs tests.
+
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Docker Build Matrix
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build {% raw %}${{ matrix.service }}{% endraw %} ({% raw %}${{ matrix.target }}{% endraw %})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        service:
+          {%- if cookiecutter.use_frontend %}
+          - frontend
+          {%- endif %}
+          {%- if cookiecutter.use_backend %}
+          - backend
+          {%- endif %}
+        target: [dev, prod]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build {% raw %}${{ matrix.service }}{% endraw %} ({% raw %}${{ matrix.target }}{% endraw %})
+        uses: docker/build-push-action@v5
+        with:
+          context: ./{% raw %}${{ matrix.service }}{% endraw %}
+          file: ./{% raw %}${{ matrix.service }}{% endraw %}/Dockerfile
+          target: {% raw %}${{ matrix.target }}{% endraw %}
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  {%- if cookiecutter.use_backend %}
+  # ---------------------------------------------------------------------------
+  # Backend Tests
+  # ---------------------------------------------------------------------------
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run linter
+        run: uv run ruff check .
+
+      - name: Run type checker
+        run: uv run mypy src
+
+      - name: Run tests
+        run: uv run pytest
+  {%- endif %}
+
+  # ---------------------------------------------------------------------------
+  # Summary
+  # ---------------------------------------------------------------------------
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [build{%- if cookiecutter.use_backend %}, test-backend{%- endif %}]
+    if: always()
+    steps:
+      - name: Check results
+        run: |
+          if [ "{% raw %}${{ needs.build.result }}{% endraw %}" != "success" ]; then
+            echo "Build failed"
+            exit 1
+          fi
+          {%- if cookiecutter.use_backend %}
+          if [ "{% raw %}${{ needs.test-backend.result }}{% endraw %}" != "success" ]; then
+            echo "Backend tests failed"
+            exit 1
+          fi
+          {%- endif %}
+          echo "All checks passed!"

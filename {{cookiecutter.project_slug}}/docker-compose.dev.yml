@@ -1,0 +1,95 @@
+# =============================================================================
+# Development Docker Compose
+# =============================================================================
+# Local development with hot reload and Traefik HTTPS routing.
+#
+# Prerequisites:
+# - Traefik running on external 'traefik' network
+# - /etc/hosts entries for local domains
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up
+# =============================================================================
+
+services:
+  {%- if cookiecutter.use_frontend %}
+  # ---------------------------------------------------------------------------
+  # Frontend - Next.js + Bun
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=https://api-{{ cookiecutter.project_slug }}.local
+    networks:
+      - traefik
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.{{ cookiecutter.project_slug }}-frontend.rule=Host(`{{ cookiecutter.project_slug }}.local`)"
+      - "traefik.http.routers.{{ cookiecutter.project_slug }}-frontend.entrypoints=websecure"
+      - "traefik.http.routers.{{ cookiecutter.project_slug }}-frontend.tls=true"
+      - "traefik.http.services.{{ cookiecutter.project_slug }}-frontend.loadbalancer.server.port={{ cookiecutter.frontend_port }}"
+    restart: unless-stopped
+  {%- endif %}
+
+  {%- if cookiecutter.use_backend %}
+  # ---------------------------------------------------------------------------
+  # Backend - FastAPI + uv
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - ./backend:/app
+      - backend-uv-cache:/root/.cache/uv
+    environment:
+      - ENVIRONMENT=development
+      - FRONTEND_URL=https://{{ cookiecutter.project_slug }}.local
+    env_file:
+      - ./backend/.env
+    networks:
+      - traefik
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.{{ cookiecutter.project_slug }}-backend.rule=Host(`api-{{ cookiecutter.project_slug }}.local`)"
+      - "traefik.http.routers.{{ cookiecutter.project_slug }}-backend.entrypoints=websecure"
+      - "traefik.http.routers.{{ cookiecutter.project_slug }}-backend.tls=true"
+      - "traefik.http.services.{{ cookiecutter.project_slug }}-backend.loadbalancer.server.port={{ cookiecutter.backend_port }}"
+    restart: unless-stopped
+  {%- endif %}
+
+  # ---------------------------------------------------------------------------
+  # Additional Services (uncomment as needed)
+  # ---------------------------------------------------------------------------
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_USER: user
+  #     POSTGRES_PASSWORD: password
+  #     POSTGRES_DB: {{ cookiecutter.project_slug | replace('-', '_') }}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - internal
+  #   restart: unless-stopped
+
+networks:
+  traefik:
+    external: true
+  internal:
+    driver: bridge
+
+volumes:
+  backend-uv-cache:
+  # postgres_data:

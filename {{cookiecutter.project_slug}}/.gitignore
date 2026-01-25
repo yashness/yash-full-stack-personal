@@ -1,0 +1,44 @@
+# =============================================================================
+# Git Ignore
+# =============================================================================
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.eggs/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node/Bun
+node_modules/
+.next/
+out/
+dist/
+bun.lockb
+
+# Logs (keep directory, ignore files)
+logs/*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# uv
+.venv/

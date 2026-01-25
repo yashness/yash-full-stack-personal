@@ -1,0 +1,26 @@
+# =============================================================================
+# Git Ignore - Cookiecutter Template Repository
+# =============================================================================
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+.eggs/
+*.egg-info/
+
+# Testing outputs
+output/
+test-output/
+
+# Environment
+.env

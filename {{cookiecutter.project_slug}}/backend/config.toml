@@ -1,0 +1,25 @@
+# =============================================================================
+# Application Configuration
+# =============================================================================
+# Non-sensitive settings only. Secrets go in .env file.
+
+[app]
+name = "{{ cookiecutter.project_name }}"
+version = "0.1.0"
+debug = false
+
+[api]
+host = "0.0.0.0"
+port = {{ cookiecutter.backend_port }}
+reload = false
+workers = 4
+cors_origins = [
+    "https://{{ cookiecutter.project_slug }}.local",
+    "http://localhost:{{ cookiecutter.frontend_port }}",
+]
+
+[logging]
+level = "INFO"
+format = "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}"
+rotation = "1 day"
+retention = "30 days"

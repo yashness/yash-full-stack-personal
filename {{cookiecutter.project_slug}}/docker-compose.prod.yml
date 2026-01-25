@@ -1,0 +1,66 @@
+# =============================================================================
+# Production Docker Compose
+# =============================================================================
+# Production builds for local testing and cloud deployment.
+# No Traefik - use your platform's load balancer/ingress.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up --build
+# =============================================================================
+
+services:
+  {%- if cookiecutter.use_frontend %}
+  # ---------------------------------------------------------------------------
+  # Frontend - Next.js standalone
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: prod
+    ports:
+      - "{{ cookiecutter.frontend_port }}:{{ cookiecutter.frontend_port }}"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${BACKEND_URL:-http://backend:{{ cookiecutter.backend_port }}}
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:{{ cookiecutter.frontend_port }}/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  {%- endif %}
+
+  {%- if cookiecutter.use_backend %}
+  # ---------------------------------------------------------------------------
+  # Backend - FastAPI production
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: prod
+    ports:
+      - "{{ cookiecutter.backend_port }}:{{ cookiecutter.backend_port }}"
+    environment:
+      - ENVIRONMENT=production
+      - FRONTEND_URL=${FRONTEND_URL:-http://frontend:{{ cookiecutter.frontend_port }}}
+    env_file:
+      - ./backend/.env
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:{{ cookiecutter.backend_port }}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  {%- endif %}
+
+networks:
+  app-network:
+    driver: bridge
