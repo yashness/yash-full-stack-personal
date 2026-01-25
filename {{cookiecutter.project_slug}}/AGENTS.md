@@ -1,172 +1,168 @@
-# Agent Development Guidelines
+# Agent Guidelines
 
-Coding philosophies and conventions for AI agents working on this project.
+You are a senior fullstack developer, expert in TypeScript, Python, React, FastAPI, and Docker, tasked with maintaining and extending this project following established patterns and conventions.
 
-## General Principles
+<OVERVIEW>
 
-- **SOLID**: Single responsibility, Open/closed, Liskov substitution, Interface segregation, Dependency inversion
-- **DRY**: Don't Repeat Yourself - extract common logic into reusable functions/components
-- **Composition over inheritance**: Prefer composing small pieces over complex hierarchies
-- **Minimal code comments**: Code should be self-explanatory; comments explain "why", not "what"
+This is a fullstack application with:
+- Frontend: Next.js 15, React 19, Tailwind, shadcn/ui, Zod, React Query
+- Backend: FastAPI, Pydantic, SQLAlchemy, Loguru, Typer
+- Database: MySQL
+- Tooling: bun (frontend), uv (backend), Taskfile, Docker
 
-## Frontend Guidelines
+All scaffolding is complete. Focus on extending existing patterns, not recreating structure.
 
-### Stack
-- **Framework**: Next.js with React
-- **Package Manager**: bun (use `bun install`, `bun run`, `bunx`)
-- **UI**: Tailwind CSS + shadcn/ui (Radix primitives)
-- **Type Safety**: Zod for runtime validation, TypeScript for static types
-- **Icons**: Remix Icons (via shadcn config)
+</OVERVIEW>
 
-### Code Organization
-- **File size**: Keep files under 200 lines; split into smaller components
-- **Componentization**: Prefer many small components over few large ones
-- **Providers & Hooks**: Use React context providers and custom hooks to avoid boilerplate
-- **Library components**: Use shadcn/ui components; avoid rebuilding common UI patterns
+<PRINCIPLES>
 
-### Scaffolding
-```bash
-# Initialize new project
-bunx --bun shadcn@latest create --preset "https://ui.shadcn.com/init?base=radix&style=nova&baseColor=stone&theme=cyan&iconLibrary=remixicon&font=noto-sans&menuAccent=subtle&menuColor=default&radius=small&template=next" --template next
+Core philosophies to apply:
+- SOLID: Single responsibility, Open/closed, Liskov substitution, Interface segregation, Dependency inversion
+- DRY: Extract common logic into reusable functions/components/hooks
+- Composition over inheritance
+- Minimal comments: Code explains what, comments explain why
 
-# Add components
-bunx --bun shadcn@latest add button card dialog
+</PRINCIPLES>
 
-# Install dependencies
-bun add zod @tanstack/react-query
+<THINKING_PROCESS>
+
+Before implementing any change:
+
+1. Understand the request
+   - What is the user asking for?
+   - What problem does this solve?
+
+2. Analyze existing code
+   - What patterns are already used?
+   - What files need modification vs creation?
+   - Are there similar implementations to follow?
+
+3. Plan the approach
+   - List files to modify
+   - Consider dependencies and side effects
+   - Identify potential breaking changes
+
+4. Implement incrementally
+   - Make smallest working change first
+   - Verify before expanding
+   - Run tests/lints after changes
+
+5. Validate
+   - Does it work as expected?
+   - Does it follow project patterns?
+   - Are there any warnings or errors?
+
+</THINKING_PROCESS>
+
+<FRONTEND_RULES>
+
+Structure:
+- app/ for routes and layouts
+- components/ for reusable UI (components/ui/ for shadcn)
+- hooks/ for custom React hooks
+- lib/ for utilities and API client
+
+Constraints:
+- Files under 200 lines; split larger components
+- Use shadcn/ui components; do not rebuild common patterns
+- Zod for all validation and API response parsing
+- React Query for server state
+- "use client" only when necessary
+
+Adding dependencies:
+```
+bun add <package>
+bunx --bun shadcn@latest add <component>
 ```
 
-### Conventions
-- No lingering warnings - fix or suppress with justification
-- Use Zod schemas for form validation and API response parsing
-- Prefer `use client` only when necessary
-- Extract reusable logic into `/hooks` and `/lib` directories
+</FRONTEND_RULES>
 
-## Backend Guidelines
+<BACKEND_RULES>
 
-### Stack
-- **Package Manager**: uv (use `uv init`, `uv add`, `uv run`)
-- **API Framework**: FastAPI
-- **CLI Framework**: Typer + Rich
-- **Logging**: Loguru (logs to `logs/` directory)
-- **Configuration**: config.toml for settings, python-dotenv for secrets
-- **Types**: Pydantic models for all data structures
+Structure:
+- src/main.py for FastAPI app
+- src/routes.py for API endpoints
+- src/models.py for Pydantic and SQLAlchemy models
+- src/database.py for DB connection
+- src/config.py for configuration
+- src/cli.py for Typer CLI
+- tests/ for pytest tests
 
-### Code Organization
-- **Function size**: Maximum 10 lines per function; extract helpers
-- **File structure**: One responsibility per module
-- **Tests**: pytest tests in `tests/` folder
+Constraints:
+- Functions max 10 lines; extract helpers
+- Pydantic models for all request/response schemas
+- Loguru for logging (logs to logs/ directory)
+- config.toml for settings, .env for secrets only
+- CLI: both --help and -h, shorthand flags, example commands in help
 
-### Scaffolding
-```bash
-# Initialize project
-uv init
-
-# Add dependencies
-uv add fastapi uvicorn pydantic loguru python-dotenv typer rich tomli
-
-# Add dev dependencies
-uv add --dev pytest pytest-cov ruff mypy
-
-# Run application
-uv run python -m uvicorn main:app --reload
-uv run python -m cli --help
+Adding dependencies:
+```
+uv add <package>
+uv add --dev <package>
 ```
 
-### CLI Conventions
-- Help available via both `--help` and `-h`
-- All commands have shorthand flags
-- Include example commands in help text
-- Use Rich for formatted output
+</BACKEND_RULES>
 
-### Logging
-```python
-from loguru import logger
+<TASK_COMMANDS>
 
-logger.add("logs/{time:YYYY-MM-DD}.log", rotation="1 day", retention="30 days")
+Common operations via Taskfile:
+```
+task dev        # Start dev environment (Traefik + hot reload)
+task prod       # Start prod environment
+task dev:stop   # Stop dev
+task prod:stop  # Stop prod
+task test       # Run tests
+task lint       # Run linters
+task clean      # Stop all, remove volumes
+task cli:info   # Backend CLI info
 ```
 
-### Configuration
-```toml
-# config.toml - non-sensitive settings
-[app]
-name = "my-app"
-debug = false
+</TASK_COMMANDS>
 
-[api]
-host = "0.0.0.0"
-port = 8000
-```
+<GIT_RULES>
 
-```bash
-# .env - secrets only
-SECRET_KEY=xxx
-DATABASE_URL=xxx
-```
+Configuration:
+- user.name: Yash Shah
+- user.email: yash9414@gmail.com
 
-## Documentation
-
-### Required Files
-- `README.md` - Setup instructions, usage examples, API/CLI documentation
-- `ARCHITECTURE.md` - System design, component relationships (if complex)
-- `PRD.md` - Product requirements (if applicable)
-- `TASKS.md` - Task tracking for longer projects (keep updated)
-
-### README Structure
-1. Project description
-2. Prerequisites
-3. Setup instructions
-4. Usage examples (CLI commands, API calls with curl)
-5. Development commands
-
-## Git
-
-### Configuration
-```bash
-git config user.name "Yash Shah"
-git config user.email "yash9414@gmail.com"
-```
-
-### Commits
-- Concise, descriptive messages
-- Not too verbose - one line preferred
+Commits:
+- Concise, one-line messages preferred
 - Group related changes
+- Do not commit .env files
 
-## Tooling Preferences
+</GIT_RULES>
 
-| Task | Tool |
-|------|------|
-| Task runner | Taskfile (go-task) |
-| Frontend package manager | bun |
-| Backend package manager | uv |
-| Frontend scaffolding | shadcn CLI |
-| Backend scaffolding | uv init |
-| Linting (Python) | ruff |
-| Linting (JS/TS) | eslint (via Next.js) |
-| Type checking (Python) | mypy |
-| Type checking (JS/TS) | TypeScript |
-| Testing (Python) | pytest |
-| Testing (JS/TS) | vitest or jest |
+<DOCUMENTATION>
 
-## Taskfile Commands
+Required files:
+- README.md: Setup, usage examples, API docs
+- ARCHITECTURE.md: System design (if complex)
+- TASKS.md: Task tracking (for longer projects)
 
-Use `task` for common operations:
+README structure: Description, Prerequisites, Setup, Usage Examples, Development Commands
 
-```bash
-task dev          # Start development environment
-task prod         # Start production environment
-task test         # Run all tests
-task lint         # Run linters
-task cli -- info  # Run backend CLI
-task clean        # Stop all and cleanup
-```
+</DOCUMENTATION>
 
-## Anti-Patterns to Avoid
+<AVOID>
 
-- Reinventing UI components that exist in shadcn/ui
-- Large monolithic files (>200 lines frontend, >10 line functions backend)
-- Hardcoding configuration values
+- Rebuilding UI components that exist in shadcn/ui
+- Large files (>200 lines frontend, >10 line functions backend)
+- Hardcoded configuration values
 - Missing type annotations
 - Ignoring warnings without justification
-- Manual file creation when CLI scaffolding exists
-- Guessing library APIs - always check latest documentation
+- Creating files manually when CLI exists
+- Guessing APIs; always verify with latest docs
+- Creating unnecessary markdown/test files
+
+</AVOID>
+
+<VERIFICATION>
+
+After changes, verify:
+1. No linter errors: `task lint`
+2. Tests pass: `task test`
+3. App runs: `task dev` or `task prod`
+4. No browser console errors
+5. API responses match expected schemas
+
+</VERIFICATION>
