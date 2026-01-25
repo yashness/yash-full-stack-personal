@@ -1,0 +1,150 @@
+version: '3'
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  # ===========================================================================
+  # Setup & Development
+  # ===========================================================================
+  setup:
+    desc: Initial project setup (hosts, env, network)
+    cmds:
+      - ./scripts/setup.sh
+
+  dev:
+    desc: Start development environment with Traefik
+    cmds:
+      - task: setup
+      - ./scripts/dev.sh
+
+  dev:logs:
+    desc: Show development logs
+    cmds:
+      - docker compose -f docker-compose.dev.yml logs -f
+
+  dev:stop:
+    desc: Stop development environment
+    cmds:
+      - docker compose -f docker-compose.dev.yml down
+      - echo "Development environment stopped."
+
+  dev:restart:
+    desc: Restart development environment
+    cmds:
+      - task: dev:stop
+      - task: dev
+
+  dev:rebuild:
+    desc: Rebuild and restart development environment
+    cmds:
+      - docker compose -f docker-compose.dev.yml down
+      - docker compose -f docker-compose.dev.yml up -d --build
+      - ./scripts/dev.sh
+
+  # ===========================================================================
+  # Production
+  # ===========================================================================
+  prod:
+    desc: Start production environment (local testing)
+    cmds:
+      - |
+        if [ ! -f backend/.env ]; then
+          cp backend/.env.example backend/.env
+        fi
+      - ./scripts/prod.sh
+
+  prod:logs:
+    desc: Show production logs
+    cmds:
+      - docker compose -f docker-compose.prod.yml logs -f
+
+  prod:stop:
+    desc: Stop production environment
+    cmds:
+      - docker compose -f docker-compose.prod.yml down
+      - echo "Production environment stopped."
+
+  prod:restart:
+    desc: Restart production environment
+    cmds:
+      - task: prod:stop
+      - task: prod
+
+  prod:clean:
+    desc: Stop production and remove volumes
+    cmds:
+      - docker compose -f docker-compose.prod.yml down -v
+      - echo "Production environment stopped and volumes removed."
+
+  # ===========================================================================
+  # Build
+  # ===========================================================================
+  build:
+    desc: Build all Docker images
+    cmds:
+      - docker compose -f docker-compose.prod.yml build
+
+  build:frontend:
+    desc: Build frontend Docker image
+    cmds:
+      - docker compose -f docker-compose.prod.yml build frontend
+
+  build:backend:
+    desc: Build backend Docker image
+    cmds:
+      - docker compose -f docker-compose.prod.yml build backend
+
+  # ===========================================================================
+  # Utilities
+  # ===========================================================================
+  status:
+    desc: Show status of all containers
+    cmds:
+      - docker compose -f docker-compose.dev.yml ps 2>/dev/null || true
+      - docker compose -f docker-compose.prod.yml ps 2>/dev/null || true
+
+  clean:
+    desc: Stop all containers and clean up
+    cmds:
+      - docker compose -f docker-compose.dev.yml down -v 2>/dev/null || true
+      - docker compose -f docker-compose.prod.yml down -v 2>/dev/null || true
+      - echo "All containers stopped and volumes removed."
+
+  # ===========================================================================
+  # Backend CLI
+  # ===========================================================================
+  cli:info:
+    desc: Show backend configuration
+    dir: backend
+    cmds:
+      - uv run python -m src.cli info -v
+
+  cli:health:
+    desc: Check backend health
+    dir: backend
+    cmds:
+      - uv run python -m src.cli health
+
+  # ===========================================================================
+  # Testing
+  # ===========================================================================
+  test:
+    desc: Run all tests
+    cmds:
+      - task: test:backend
+
+  test:backend:
+    desc: Run backend tests
+    dir: backend
+    cmds:
+      - uv run pytest
+
+  lint:
+    desc: Run linters
+    dir: backend
+    cmds:
+      - uv run ruff check .
+      - uv run mypy src

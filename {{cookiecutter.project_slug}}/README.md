@@ -9,46 +9,77 @@ A fullstack todo application with Next.js frontend and FastAPI backend.
 | Layer | Technology |
 |-------|------------|
 | Frontend | Next.js 15, React 19, Tailwind CSS, shadcn/ui, Zod, React Query |
-| Backend | FastAPI, Pydantic, SQLAlchemy, Loguru |
+| Backend | FastAPI, Pydantic, SQLAlchemy, Loguru, Typer |
 | Database | MySQL 8.0 |
+| Task Runner | Taskfile |
 | Package Managers | bun (frontend), uv (backend) |
 
 ## Quick Start
 
-### 1. Setup Hosts
+### Prerequisites
+
+- Docker and Docker Compose
+- [Task](https://taskfile.dev/) (`brew install go-task`)
+- Traefik running on `traefik` network (for dev only)
+
+### 1. Setup & Start Development
 
 ```bash
-# Run the setup script
-sudo ./scripts/setup-hosts.sh
-
-# Or manually add to /etc/hosts:
-# 127.0.0.1 {{ cookiecutter.project_slug }}.local
-# 127.0.0.1 api-{{ cookiecutter.project_slug }}.local
+# One command to setup everything and start
+task dev
 ```
 
-### 2. Create Traefik Network
+This will:
+- Add `/etc/hosts` entries (requires sudo)
+- Create backend `.env` from template
+- Create `traefik` Docker network
+- Start all services with hot reload
 
-```bash
-docker network create traefik
-```
-
-### 3. Setup Backend Environment
-
-```bash
-cp backend/.env.example backend/.env
-```
-
-### 4. Start Development
-
-```bash
-docker compose -f docker-compose.dev.yml up
-```
-
-### 5. Access the App
+### 2. Access the App
 
 - **Frontend**: https://{{ cookiecutter.project_slug }}.local
 - **Backend API**: https://api-{{ cookiecutter.project_slug }}.local
 - **API Docs**: https://api-{{ cookiecutter.project_slug }}.local/docs
+
+## Taskfile Commands
+
+```bash
+# Show all available tasks
+task
+
+# Development
+task dev              # Start dev environment
+task dev:logs         # Show logs
+task dev:stop         # Stop dev environment
+task dev:restart      # Restart dev environment
+task dev:rebuild      # Rebuild and restart
+
+# Production (local testing)
+task prod             # Build and start prod
+task prod:logs        # Show logs
+task prod:stop        # Stop prod environment
+task prod:clean       # Stop and remove volumes
+
+# Build
+task build            # Build all Docker images
+task build:frontend   # Build frontend only
+task build:backend    # Build backend only
+
+# Testing
+task test             # Run all tests
+task test:backend     # Run backend tests
+task lint             # Run linters
+
+# CLI
+task cli -- --help    # Run backend CLI
+task cli:info         # Show config
+task cli:health       # Check health
+
+# Utilities
+task setup            # Setup hosts, env, network
+task status           # Show container status
+task clean            # Stop all and remove volumes
+```
 
 ## API Endpoints
 
@@ -75,11 +106,11 @@ curl -X DELETE https://api-{{ cookiecutter.project_slug }}.local/api/v1/todos/1
 curl https://api-{{ cookiecutter.project_slug }}.local/health
 ```
 
-## Production
+## Production (Local Testing)
 
 ```bash
 # Build and run production
-docker compose -f docker-compose.prod.yml up --build
+task prod
 
 # Access at:
 # Frontend: http://localhost:{{ cookiecutter.frontend_port }}
@@ -121,19 +152,9 @@ bun run dev
 {{ cookiecutter.project_slug }}/
 ├── frontend/
 │   ├── app/                 # Next.js App Router
-│   │   ├── layout.tsx
-│   │   ├── page.tsx
-│   │   └── providers.tsx
-│   ├── components/
-│   │   ├── ui/              # shadcn components
-│   │   ├── todo-list.tsx
-│   │   ├── todo-item.tsx
-│   │   └── add-todo.tsx
-│   ├── hooks/
-│   │   └── use-todos.ts     # React Query hooks
-│   └── lib/
-│       ├── api.ts           # API client with Zod
-│       └── utils.ts
+│   ├── components/          # React components
+│   ├── hooks/               # React Query hooks
+│   └── lib/                 # API client + utilities
 ├── backend/
 │   ├── src/
 │   │   ├── main.py          # FastAPI app
@@ -143,26 +164,43 @@ bun run dev
 │   │   ├── config.py        # Configuration
 │   │   ├── logging.py       # Loguru setup
 │   │   └── cli.py           # Typer CLI
-│   ├── tests/
-│   ├── config.toml
-│   └── pyproject.toml
+│   └── tests/
 ├── scripts/
-│   └── setup-hosts.sh       # Add /etc/hosts entries
+│   └── setup-hosts.sh       # Manual hosts setup
+├── Taskfile.yml             # Task runner config
 ├── docker-compose.dev.yml   # Development with Traefik
 ├── docker-compose.prod.yml  # Production
 └── AGENTS.md                # AI coding guidelines
 ```
 
+## Service Communication
+
+### Development (with Traefik)
+```
+Browser → Traefik (HTTPS)
+           ├── {{ cookiecutter.project_slug }}.local → frontend
+           └── api-{{ cookiecutter.project_slug }}.local → backend → db (internal)
+```
+
+### Production (without Traefik)
+```
+Browser → localhost:{{ cookiecutter.frontend_port }} → frontend
+       → localhost:{{ cookiecutter.backend_port }} → backend → db (internal)
+
+Internal: frontend → backend:{{ cookiecutter.backend_port }}
+          backend → db:3306
+```
+
 ## Configuration
 
-### Backend Environment (.env)
+### Backend Environment (backend/.env)
 ```bash
 SECRET_KEY=your-secret-key
 DATABASE_URL=mysql://user:password@db:3306/{{ cookiecutter.project_slug | replace('-', '_') }}
 FRONTEND_URL=https://{{ cookiecutter.project_slug }}.local
 ```
 
-### Backend Config (config.toml)
+### Backend Config (backend/config.toml)
 ```toml
 [app]
 name = "{{ cookiecutter.project_name }}"

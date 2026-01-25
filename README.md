@@ -46,18 +46,14 @@ use_backend [True]:
 ```bash
 cd my-app
 
-# Add DNS entries
-echo "127.0.0.1 my-app.local" | sudo tee -a /etc/hosts
-echo "127.0.0.1 api-my-app.local" | sudo tee -a /etc/hosts
+# One command to setup and start (requires go-task)
+task dev
 
-# Create traefik network
-docker network create traefik
-
-# Setup backend
-cp backend/.env.example backend/.env
-
-# Start development
-docker compose -f docker-compose.dev.yml up
+# Or manually:
+# sudo ./scripts/setup-hosts.sh
+# cp backend/.env.example backend/.env
+# docker network create traefik
+# docker compose -f docker-compose.dev.yml up
 ```
 
 ## Template Variables

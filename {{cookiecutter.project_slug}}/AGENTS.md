@@ -136,6 +136,7 @@ git config user.email "yash9414@gmail.com"
 
 | Task | Tool |
 |------|------|
+| Task runner | Taskfile (go-task) |
 | Frontend package manager | bun |
 | Backend package manager | uv |
 | Frontend scaffolding | shadcn CLI |
@@ -146,6 +147,19 @@ git config user.email "yash9414@gmail.com"
 | Type checking (JS/TS) | TypeScript |
 | Testing (Python) | pytest |
 | Testing (JS/TS) | vitest or jest |
+
+## Taskfile Commands
+
+Use `task` for common operations:
+
+```bash
+task dev          # Start development environment
+task prod         # Start production environment
+task test         # Run all tests
+task lint         # Run linters
+task cli -- info  # Run backend CLI
+task clean        # Stop all and cleanup
+```
 
 ## Anti-Patterns to Avoid
 
