@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   MessagePrimitive,
   useMessage,
@@ -63,17 +64,47 @@ function FileContent(props: { filename?: string; mimeType: string; data: string 
 
 /**
  * Reasoning content renderer (chain-of-thought).
+ * Shows AI thinking process in a collapsible section with animation.
  */
 function ReasoningContent(props: { text: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <details className="my-2 text-muted-foreground">
-      <summary className="cursor-pointer text-sm font-medium hover:text-foreground transition-colors">
-        💭 Thinking...
-      </summary>
-      <div className="mt-2 pl-4 border-l-2 border-muted text-sm">
-        {props.text}
+    <div className="my-2 rounded-lg border border-muted/50 bg-muted/20 overflow-hidden">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 w-full p-3 text-left text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-all"
+      >
+        <span
+          className={`transform transition-transform duration-200 ${
+            isOpen ? "rotate-90" : ""
+          }`}
+        >
+          ▶
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-purple-100 dark:bg-purple-900/30">
+            💭
+          </span>
+          Thinking
+          {!isOpen && (
+            <span className="text-xs text-muted-foreground/70">
+              (click to expand)
+            </span>
+          )}
+        </span>
+      </button>
+
+      <div
+        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="px-4 pb-3 pl-10 text-sm text-muted-foreground whitespace-pre-wrap">
+          {props.text}
+        </div>
       </div>
-    </details>
+    </div>
   );
 }
 

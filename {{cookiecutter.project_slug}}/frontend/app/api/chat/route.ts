@@ -1,6 +1,11 @@
 /**
  * Chat API route - proxies requests to the Python backend.
  * The backend handles the Claude Agent SDK integration and returns SSE stream.
+ *
+ * Supports:
+ * - Thread-based conversations with session persistence
+ * - Multimodal content (text, images)
+ * - Tool execution
  */
 
 // Use internal Docker URL for server-side requests, fall back to localhost for local dev
@@ -9,12 +14,20 @@ const BACKEND_URL = process.env.BACKEND_INTERNAL_URL || "http://localhost:8000/a
 interface MessagePart {
   type: string;
   text?: string;
+  image?: string;
 }
 
 interface Message {
   role: string;
   content?: string | MessagePart[];
   parts?: MessagePart[];
+}
+
+interface ChatRequestBody {
+  messages?: Message[];
+  system?: string;
+  thread_id?: string;
+  continue_session?: boolean;
 }
 
 function extractTextContent(message: Message): string {
@@ -44,7 +57,7 @@ function extractTextContent(message: Message): string {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body: ChatRequestBody = await req.json();
 
     // Handle different message formats from assistant-ui
     const messages = (body.messages || []).map((m: Message) => ({
@@ -52,16 +65,21 @@ export async function POST(req: Request) {
       content: extractTextContent(m),
     }));
 
+    // Build request payload with thread support
+    const payload = {
+      messages,
+      system: body.system,
+      thread_id: body.thread_id || null,
+      continue_session: body.continue_session !== false, // Default to true
+    };
+
     // Forward the request to the backend
     const response = await fetch(`${BACKEND_URL}/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        messages,
-        system: body.system,
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -73,12 +91,16 @@ export async function POST(req: Request) {
       );
     }
 
+    // Get thread_id from response header if present
+    const threadId = response.headers.get("X-Thread-Id");
+
     // Stream the SSE response back to the client
     return new Response(response.body, {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         "Connection": "keep-alive",
+        ...(threadId && { "X-Thread-Id": threadId }),
       },
     });
   } catch (error) {

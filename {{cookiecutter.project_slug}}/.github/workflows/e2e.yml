@@ -1,0 +1,73 @@
+# =============================================================================
+# E2E Testing Workflow
+# =============================================================================
+# Runs Playwright E2E tests against the full application stack.
+
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    name: Playwright E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: bun install
+
+      - name: Install Playwright browsers
+        working-directory: ./frontend
+        run: bunx playwright install --with-deps chromium
+
+      - name: Start services with Docker Compose
+        run: |
+          docker compose -f docker-compose.prod.yml up -d --build
+          # Wait for services to be healthy
+          echo "Waiting for services to start..."
+          sleep 30
+          # Check health
+          curl -f http://localhost:{{ cookiecutter.backend_port }}/health || exit 1
+          echo "Services are ready!"
+
+      - name: Run Playwright tests
+        working-directory: ./frontend
+        run: bunx playwright test
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:{{ cookiecutter.frontend_port }}
+          BACKEND_URL: http://localhost:{{ cookiecutter.backend_port }}
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
+
+      - name: Upload test screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-screenshots
+          path: frontend/test-results/
+          retention-days: 7
+
+      - name: Stop services
+        if: always()
+        run: docker compose -f docker-compose.prod.yml down -v

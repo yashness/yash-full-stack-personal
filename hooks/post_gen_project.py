@@ -7,7 +7,7 @@ import stat
 import subprocess
 
 # Cookiecutter context variables
-COPILOT_UI = "{{ cookiecutter.copilot_ui }}" == "True"
+COPILOT_UI = "{{ cookiecutter.copilot_ui }}".lower() in ("true", "1", "yes")
 
 
 def remove_copilot_files():
@@ -21,14 +21,19 @@ def remove_copilot_files():
         os.path.join("frontend", "app", "copilot", "page.tsx"),
         os.path.join("frontend", "components", "copilot-chat.tsx"),
         os.path.join("frontend", "app", "api", "chat", "route.ts"),
+        os.path.join("frontend", "lib", "chat-api.ts"),
+        os.path.join("frontend", "hooks", "use-chat-store.ts"),
         os.path.join("backend", "src", "chat.py"),
+        os.path.join("backend", "src", "session_manager.py"),
     ]
 
     # Directories to remove when copilot_ui is false (order matters - children first)
     copilot_dirs = [
         os.path.join("frontend", "components", "copilot"),
         os.path.join("frontend", "app", "copilot"),
+        os.path.join("frontend", "app", "api", "threads"),
         os.path.join("frontend", "app", "api", "chat"),
+        os.path.join("frontend", "tests", "e2e"),
     ]
 
     for filepath in copilot_files:

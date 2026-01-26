@@ -1,5 +1,6 @@
 """FastAPI application entry point."""
 
+import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -11,6 +12,7 @@ from sqlalchemy import text
 from .config import get_config, get_settings
 from .database import async_engine, init_db
 from .logging import setup_logging
+from .migrations import run_migrations_sync_in_thread
 from .models import HealthResponse, WelcomeResponse
 from .routes import router
 from .webhooks import router as webhooks_router
@@ -22,11 +24,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler."""
     setup_logging()
     logger.info("Starting {{ cookiecutter.project_name }} API")
+
+    # Run database migrations on startup
     try:
-        await init_db()
-        logger.info("Database initialized")
+        # Run Alembic migrations in a thread to avoid async loop conflicts
+        run_migrations_sync_in_thread()
+        logger.info("Database migrations completed")
     except Exception as e:
-        logger.warning(f"Database initialization failed (running without DB): {e}")
+        logger.warning(f"Database migration failed: {e}")
+        # Fallback to direct table creation for development
+        try:
+            await init_db()
+            logger.info("Database tables created directly (fallback)")
+        except Exception as e2:
+            logger.warning(f"Database initialization failed (running without DB): {e2}")
+
     yield
     logger.info("Shutting down {{ cookiecutter.project_name }} API")
 
