@@ -4,8 +4,8 @@
 set -e
 
 PROJECT_SLUG="{{ cookiecutter.project_slug }}"
-FRONTEND_HOST="${PROJECT_SLUG}.local"
-BACKEND_HOST="api-${PROJECT_SLUG}.local"
+FRONTEND_HOST="${PROJECT_SLUG}.dev.test"
+BACKEND_HOST="api-${PROJECT_SLUG}.dev.test"
 
 echo ""
 echo "Starting development environment..."

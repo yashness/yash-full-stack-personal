@@ -23,13 +23,17 @@ services:
       - /app/.next
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=https://api-{{ cookiecutter.project_slug }}.local
+      - NEXT_PUBLIC_API_URL=https://api-{{ cookiecutter.project_slug }}.dev.test
+      - BACKEND_INTERNAL_URL=http://backend:{{ cookiecutter.backend_port }}/api/v1
+      # Clerk env vars (run `bun run setup:clerk` in frontend to enable auth)
+      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-pk_test_Y2VydGFpbi1qYWd1YXItMTkuY2xlcmsuYWNjb3VudHMuZGV2JA}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY:-sk_test_8gJB6j4KZAVoerpfdYF1qqiQOfUnNvJajMI3xw7ssA}
     networks:
       - traefik
       - internal
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.{{ cookiecutter.project_slug }}-frontend.rule=Host(`{{ cookiecutter.project_slug }}.local`)"
+      - "traefik.http.routers.{{ cookiecutter.project_slug }}-frontend.rule=Host(`{{ cookiecutter.project_slug }}.dev.test`)"
       - "traefik.http.routers.{{ cookiecutter.project_slug }}-frontend.entrypoints=websecure"
       - "traefik.http.routers.{{ cookiecutter.project_slug }}-frontend.tls=true"
       - "traefik.http.services.{{ cookiecutter.project_slug }}-frontend.loadbalancer.server.port={{ cookiecutter.frontend_port }}"
@@ -52,8 +56,11 @@ services:
       - backend-uv-cache:/root/.cache/uv
     environment:
       - ENVIRONMENT=development
-      - FRONTEND_URL=https://{{ cookiecutter.project_slug }}.local
+      - FRONTEND_URL=https://{{ cookiecutter.project_slug }}.dev.test
       - DATABASE_URL=mysql://user:password@db:3306/{{ cookiecutter.project_slug | replace('-', '_') }}
+      # Clerk env vars (run `bun run setup:clerk` in frontend to enable auth)
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY:-sk_test_8gJB6j4KZAVoerpfdYF1qqiQOfUnNvJajMI3xw7ssA}
+      - CLERK_WEBHOOK_SECRET=${CLERK_WEBHOOK_SECRET:-whsec_RhtRvY27N5ZqIsm3pQ6cTJmbG6vADMVE}
     env_file:
       - ./backend/.env
     networks:
@@ -61,7 +68,7 @@ services:
       - internal
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.{{ cookiecutter.project_slug }}-backend.rule=Host(`api-{{ cookiecutter.project_slug }}.local`)"
+      - "traefik.http.routers.{{ cookiecutter.project_slug }}-backend.rule=Host(`api-{{ cookiecutter.project_slug }}.dev.test`)"
       - "traefik.http.routers.{{ cookiecutter.project_slug }}-backend.entrypoints=websecure"
       - "traefik.http.routers.{{ cookiecutter.project_slug }}-backend.tls=true"
       - "traefik.http.services.{{ cookiecutter.project_slug }}-backend.loadbalancer.server.port={{ cookiecutter.backend_port }}"

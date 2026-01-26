@@ -4,8 +4,8 @@
 set -e
 
 PROJECT_SLUG="{{ cookiecutter.project_slug }}"
-FRONTEND_HOST="${PROJECT_SLUG}.local"
-BACKEND_HOST="api-${PROJECT_SLUG}.local"
+FRONTEND_HOST="${PROJECT_SLUG}.dev.test"
+BACKEND_HOST="api-${PROJECT_SLUG}.dev.test"
 
 echo "Setting up ${PROJECT_SLUG}..."
 
@@ -30,6 +30,14 @@ if [ ! -f backend/.env ]; then
     cp backend/.env.example backend/.env
 else
     echo "✓ backend/.env already exists"
+fi
+
+# Create frontend .env.local if not exists
+if [ ! -f frontend/.env.local ]; then
+    echo "Creating frontend/.env.local from .env.example..."
+    cp frontend/.env.example frontend/.env.local
+else
+    echo "✓ frontend/.env.local already exists"
 fi
 
 # Create traefik network if not exists

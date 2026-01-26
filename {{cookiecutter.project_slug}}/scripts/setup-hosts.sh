@@ -10,8 +10,8 @@ set -e
 HOSTS_FILE="/etc/hosts"
 PROJECT_SLUG="{{ cookiecutter.project_slug }}"
 
-FRONTEND_HOST="${PROJECT_SLUG}.local"
-BACKEND_HOST="api-${PROJECT_SLUG}.local"
+FRONTEND_HOST="${PROJECT_SLUG}.dev.test"
+BACKEND_HOST="api-${PROJECT_SLUG}.dev.test"
 
 add_host_entry() {
     local hostname=$1
