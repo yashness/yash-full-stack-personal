@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Noto_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import { Header } from "@/components/header";
+import { Header } from "@/components/layout";
 
 const notoSans = Noto_Sans({
   subsets: ["latin"],

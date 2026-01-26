@@ -24,8 +24,9 @@ def remove_copilot_files():
         os.path.join("backend", "src", "chat.py"),
     ]
 
-    # Directories to remove when copilot_ui is false
+    # Directories to remove when copilot_ui is false (order matters - children first)
     copilot_dirs = [
+        os.path.join("frontend", "components", "copilot"),
         os.path.join("frontend", "app", "copilot"),
         os.path.join("frontend", "app", "api", "chat"),
     ]
@@ -35,10 +36,11 @@ def remove_copilot_files():
             os.remove(filepath)
             print(f"✓ Removed {filepath}")
 
+    # Remove directories recursively
     for dirpath in copilot_dirs:
-        if os.path.exists(dirpath) and not os.listdir(dirpath):
-            os.rmdir(dirpath)
-            print(f"✓ Removed empty directory {dirpath}")
+        if os.path.exists(dirpath):
+            shutil.rmtree(dirpath)
+            print(f"✓ Removed directory {dirpath}")
 
     print("✓ Copilot UI disabled - removed copilot files")
 

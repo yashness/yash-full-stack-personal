@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
-{% if cookiecutter.copilot_ui %}import { Bot } from "lucide-react";{% endif %}
+import { FEATURES } from "@/lib/features";
+import { CopilotNavLink } from "./nav-links";
 
+/**
+ * Main header component.
+ * Uses feature flags to conditionally render optional navigation items.
+ */
 export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -12,15 +17,7 @@ export function Header() {
         </Link>
 
         <nav className="flex items-center gap-4">
-{% if cookiecutter.copilot_ui %}
-          <Link
-            href="/copilot"
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors"
-          >
-            <Bot className="w-4 h-4" />
-            Copilot
-          </Link>
-{% endif %}
+          {FEATURES.copilot && <CopilotNavLink />}
           {/*
             To add authentication, run in frontend folder:
             bun run setup:clerk

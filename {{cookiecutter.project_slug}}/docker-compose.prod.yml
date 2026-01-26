@@ -4,7 +4,16 @@
 # Production builds for local testing and cloud deployment.
 #
 # Usage:
+#   # With local MySQL database:
 #   docker compose -f docker-compose.prod.yml up --build
+#
+#   # With external database (Neon/PostgreSQL):
+#   docker compose -f docker-compose.prod.yml up --build frontend backend
+#
+# For Neon/PostgreSQL production:
+#   1. Create project: neon project create --name {{ cookiecutter.project_slug }}
+#   2. Set DATABASE_URL in backend/.env with the Neon connection string
+#   3. Run without db service: docker compose -f docker-compose.prod.yml up frontend backend
 # =============================================================================
 
 services:
@@ -29,7 +38,8 @@ services:
     networks:
       - app-network
     depends_on:
-      - backend
+      backend:
+        condition: service_started
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:{{ cookiecutter.frontend_port }}/"]
@@ -53,14 +63,14 @@ services:
     environment:
       - ENVIRONMENT=production
       - FRONTEND_URL=${FRONTEND_URL:-http://frontend:{{ cookiecutter.frontend_port }}}
-      - DATABASE_URL=mysql://user:password@db:3306/{{ cookiecutter.project_slug | replace('-', '_') }}
+      # DATABASE_URL is loaded from .env file
+      # For Neon: postgresql://user:pass@host/db?sslmode=require
+      # For MySQL: mysql://user:password@db:3306/dbname
     env_file:
       - ./backend/.env
     networks:
       - app-network
-    depends_on:
-      db:
-        condition: service_healthy
+    # Note: When using external DB (Neon), remove depends_on or run without db service
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:{{ cookiecutter.backend_port }}/health"]
@@ -71,10 +81,15 @@ services:
   {%- endif %}
 
   # ---------------------------------------------------------------------------
-  # MySQL Database
+  # MySQL Database (Development/Local Production Testing)
   # ---------------------------------------------------------------------------
+  # For production with Neon, skip this service:
+  #   docker compose -f docker-compose.prod.yml up frontend backend
   db:
     image: mysql:8.0
+    profiles:
+      - mysql
+      - full
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
       MYSQL_DATABASE: {{ cookiecutter.project_slug | replace('-', '_') }}

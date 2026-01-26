@@ -1,6 +1,6 @@
 "use client";
 
-import { CopilotChat } from "@/components/copilot-chat";
+import { CopilotChat } from "@/components/copilot";
 
 export default function CopilotPage() {
   return (

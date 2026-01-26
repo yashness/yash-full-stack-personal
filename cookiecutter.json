@@ -15,6 +15,16 @@
     "frontend/components/billing-content.tsx",
     "frontend/app/copilot/page.tsx",
     "frontend/components/copilot-chat.tsx",
+    "frontend/components/copilot/index.tsx",
+    "frontend/components/copilot/messages.tsx",
+    "frontend/components/copilot/composer.tsx",
+    "frontend/components/copilot/message-actions.tsx",
+    "frontend/components/copilot/thread-welcome.tsx",
+    "frontend/components/copilot/scroll-to-bottom.tsx",
+    "frontend/components/copilot/tool-call-ui.tsx",
+    "frontend/components/copilot/markdown-text.tsx",
+    "frontend/components/layout/nav-links.tsx",
+    "frontend/components/layout/index.ts",
     "frontend/app/api/chat/route.ts"
   ]
 }
