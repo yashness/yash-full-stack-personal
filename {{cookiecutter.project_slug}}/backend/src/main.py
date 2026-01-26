@@ -13,6 +13,8 @@ from .database import async_engine, init_db
 from .logging import setup_logging
 from .models import HealthResponse, WelcomeResponse
 from .routes import router
+from .webhooks import router as webhooks_router
+{% if cookiecutter.copilot_ui %}from .chat import router as chat_router{% endif %}
 
 
 @asynccontextmanager
@@ -20,8 +22,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler."""
     setup_logging()
     logger.info("Starting {{ cookiecutter.project_name }} API")
-    await init_db()
-    logger.info("Database initialized")
+    try:
+        await init_db()
+        logger.info("Database initialized")
+    except Exception as e:
+        logger.warning(f"Database initialization failed (running without DB): {e}")
     yield
     logger.info("Shutting down {{ cookiecutter.project_name }} API")
 
@@ -47,6 +52,8 @@ def create_app() -> FastAPI:
 
     # Include routers
     app.include_router(router, prefix="/api/v1")
+    app.include_router(webhooks_router, prefix="/api")
+{% if cookiecutter.copilot_ui %}    app.include_router(chat_router, prefix="/api/v1"){% endif %}
 
     return app
 

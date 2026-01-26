@@ -7,12 +7,13 @@
     "build": "next build",
     "start": "next start --port {{ cookiecutter.frontend_port }}",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "setup:clerk": "bunx --bun shadcn@latest add @clerk/nextjs-quickstart"
   },
   "dependencies": {
-    "next": "^15.1.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "next": "^16.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "zod": "^3.24.0",
     "@tanstack/react-query": "^5.62.0",
     "class-variance-authority": "^0.7.1",
@@ -20,7 +21,10 @@
     "tailwind-merge": "^2.6.0",
     "lucide-react": "^0.469.0",
     "@radix-ui/react-checkbox": "^1.1.3",
-    "@radix-ui/react-slot": "^1.1.1"
+    "@radix-ui/react-slot": "^1.1.1"{% if cookiecutter.copilot_ui %},
+    "@assistant-ui/react": "^0.12.0",
+    "@assistant-ui/react-ai-sdk": "^1.3.0",
+    "ai": "^6.0.0"{% endif %}
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
@@ -31,7 +35,7 @@
     "postcss": "^8.4.49",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.0.0",
-    "eslint-config-next": "^15.0.0"
+    "eslint-config-next": "^16.0.0"
   },
   "packageManager": "bun@1.1.0"
 }
