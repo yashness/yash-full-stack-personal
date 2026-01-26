@@ -8,6 +8,7 @@ A production-grade [Cookiecutter](https://cookiecutter.readthedocs.io/) template
 |-------|------------|
 | Frontend | Next.js 15, React 19, Tailwind CSS, shadcn/ui, Zod |
 | Backend | FastAPI, Pydantic, Loguru, Typer |
+| Auth | Clerk (optional, via shadcn/ui CLI) |
 | Package Managers | bun (frontend), uv (backend) |
 | Development | Docker, Traefik (HTTPS), hot reload |
 
@@ -75,7 +76,7 @@ my-app/
 ├── frontend/
 │   ├── Dockerfile           # Bun + Next.js (dev/prod)
 │   ├── package.json
-│   └── SETUP.md             # shadcn scaffolding instructions
+│   └── components.json      # shadcn/ui config
 ├── backend/
 │   ├── Dockerfile           # uv + FastAPI (dev/prod)
 │   ├── pyproject.toml       # uv project
@@ -99,7 +100,7 @@ my-app/
 ### Development
 - Hot reload via volume mounts
 - HTTPS via Traefik
-- Domain-based routing (`app.local`, `api-app.local`)
+- Domain-based routing (`app.dev.test`, `api-app.dev.test`)
 - No exposed ports
 
 ### Production
@@ -109,6 +110,24 @@ my-app/
 - Cloud-ready (use platform ingress)
 
 ## Key Features
+
+### Authentication (Clerk - Optional)
+
+Add Clerk authentication using the official shadcn/ui CLI:
+
+```bash
+cd frontend
+bun run setup:clerk  # Runs: bunx --bun shadcn@latest add @clerk/nextjs-quickstart
+```
+
+This installs:
+- **ClerkProvider** with theme integration
+- **Sign-in/sign-up pages** with catch-all routes
+- **Middleware** for route protection
+- **Header component** with auth buttons
+- **Theme provider** for dark/light mode
+
+After setup, add your Clerk keys to `.env` and rebuild.
 
 ### Backend
 - **FastAPI** with automatic OpenAPI docs
@@ -120,19 +139,16 @@ my-app/
 
 ### Frontend
 - **Next.js 15** with App Router
-- **shadcn/ui** component library
+- **shadcn/ui** component library (pre-configured)
 - **Zod** for runtime validation
 - **Bun** for fast builds
+- **React Query** for server state
 
-## Customization
-
-After generation, scaffold the actual frontend:
+## Adding shadcn/ui Components
 
 ```bash
 cd frontend
-rm -rf package.json SETUP.md public
-
-bunx --bun shadcn@latest create --preset "https://ui.shadcn.com/init?base=radix&style=nova&baseColor=stone&theme=cyan&iconLibrary=remixicon&font=noto-sans&menuAccent=subtle&menuColor=default&radius=small&template=next" --template next .
+bunx --bun shadcn@latest add button card input
 ```
 
 See `AGENTS.md` in the generated project for coding guidelines.

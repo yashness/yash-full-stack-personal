@@ -13,9 +13,9 @@ port = {{ cookiecutter.backend_port }}
 reload = false
 workers = 4
 cors_origins = [
-    "https://{{ cookiecutter.project_slug }}.local",
+    "https://{{ cookiecutter.project_slug }}.dev.test",
     "http://localhost:{{ cookiecutter.frontend_port }}",
-    "http://{{ cookiecutter.project_slug }}.local",
+    "http://{{ cookiecutter.project_slug }}.dev.test",
 ]
 
 [logging]

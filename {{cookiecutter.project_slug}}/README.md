@@ -10,6 +10,7 @@ A fullstack todo application with Next.js frontend and FastAPI backend.
 |-------|------------|
 | Frontend | Next.js 15, React 19, Tailwind CSS, shadcn/ui, Zod, React Query |
 | Backend | FastAPI, Pydantic, SQLAlchemy, Loguru, Typer |
+| Auth | Clerk (optional, via shadcn/ui CLI) |
 | Database | MySQL 8.0 |
 | Task Runner | Taskfile |
 | Package Managers | bun (frontend), uv (backend) |
@@ -37,9 +38,130 @@ This will:
 
 ### 2. Access the App
 
-- **Frontend**: https://{{ cookiecutter.project_slug }}.local
-- **Backend API**: https://api-{{ cookiecutter.project_slug }}.local
-- **API Docs**: https://api-{{ cookiecutter.project_slug }}.local/docs
+- **Frontend**: https://{{ cookiecutter.project_slug }}.dev.test
+- **Backend API**: https://api-{{ cookiecutter.project_slug }}.dev.test
+- **API Docs**: https://api-{{ cookiecutter.project_slug }}.dev.test/docs
+
+## Adding Authentication (Clerk)
+
+Add Clerk authentication using the official shadcn/ui Clerk registry:
+
+```bash
+cd frontend
+
+# Install dependencies first (if not already done)
+bun install
+
+# Full quickstart - includes layout, sign-in/up pages, header
+bunx --bun shadcn@latest add @clerk/nextjs-quickstart --overwrite
+
+# Rename proxy.ts to middleware.ts
+mv proxy.ts middleware.ts
+```
+
+After running setup:
+
+1. **Fix layout.tsx** - Add `Providers` wrapper for React Query:
+   ```tsx
+   // In app/layout.tsx, add import:
+   import { Providers } from './providers';
+
+   // Wrap children with Providers inside ThemeProvider:
+   <ThemeProvider ...>
+     <Providers>
+       <Header />
+       {children}
+     </Providers>
+   </ThemeProvider>
+   ```
+
+2. **Add Clerk keys** to `frontend/.env.local`:
+   ```bash
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+   CLERK_SECRET_KEY=sk_test_...
+   ```
+
+3. **Rebuild**: `task dev:rebuild`
+
+## Adding Billing (Clerk Billing)
+
+After setting up Clerk authentication, you can enable billing:
+
+1. **Enable Clerk Billing** in your [Clerk Dashboard](https://dashboard.clerk.com/~/billing/settings)
+
+2. **Create Plans** in the [Subscription Plans](https://dashboard.clerk.com/~/billing/plans) page
+
+3. **Access the pages**:
+   - `/pricing` - Public pricing page with `<PricingTable />`
+   - `/billing` - Protected billing management page (requires sign-in)
+
+### Protect Content by Plan or Feature
+
+Use `has()` to check access server-side:
+
+```tsx
+import { auth } from '@clerk/nextjs/server'
+
+export default async function PremiumPage() {
+  const { has } = await auth()
+
+  if (!has({ plan: 'pro' })) {
+    return <p>Upgrade to Pro to access this content.</p>
+  }
+
+  return <h1>Pro Content</h1>
+}
+```
+
+Or use `<Protect>` component:
+
+```tsx
+import { Protect } from '@clerk/nextjs'
+
+export default function Page() {
+  return (
+    <Protect plan="pro" fallback={<p>Upgrade required</p>}>
+      <h1>Pro Content</h1>
+    </Protect>
+  )
+}
+```
+
+### Backend Integration
+
+The backend uses `clerk-backend-api` to verify tokens and sync user data.
+
+#### Protected Endpoints
+
+```python
+from src.clerk import CurrentUser, CurrentUserWithSubscription, require_plan
+
+# Basic auth - requires any authenticated user
+@router.get("/me")
+async def get_profile(user: CurrentUser):
+    return {"user_id": user.user_id}
+
+# With subscription info
+@router.get("/subscription")
+async def get_subscription(user: CurrentUserWithSubscription):
+    return {"plan": user.plan, "features": user.features}
+
+# Require specific plan
+@router.get("/premium")
+async def premium_content(user = Depends(require_plan("pro"))):
+    return {"message": "Premium content"}
+```
+
+#### Webhooks
+
+Set up webhooks in [Clerk Dashboard](https://dashboard.clerk.com/webhooks):
+- **Endpoint URL**: `https://api-{{ cookiecutter.project_slug }}.dev.test/api/webhooks/clerk`
+- **Events**: `user.created`, `user.updated`, `user.deleted`, `subscription.*`
+
+Add the webhook secret to `backend/.env`:
+```bash
+CLERK_WEBHOOK_SECRET=whsec_...
+```
 
 ## Taskfile Commands
 
@@ -87,23 +209,23 @@ task clean            # Stop all and remove volumes
 
 ```bash
 # List all todos
-curl https://api-{{ cookiecutter.project_slug }}.local/api/v1/todos
+curl https://api-{{ cookiecutter.project_slug }}.dev.test/api/v1/todos
 
 # Create a todo
-curl -X POST https://api-{{ cookiecutter.project_slug }}.local/api/v1/todos \
+curl -X POST https://api-{{ cookiecutter.project_slug }}.dev.test/api/v1/todos \
   -H "Content-Type: application/json" \
   -d '{"title": "Buy groceries"}'
 
 # Update a todo
-curl -X PATCH https://api-{{ cookiecutter.project_slug }}.local/api/v1/todos/1 \
+curl -X PATCH https://api-{{ cookiecutter.project_slug }}.dev.test/api/v1/todos/1 \
   -H "Content-Type: application/json" \
   -d '{"completed": true}'
 
 # Delete a todo
-curl -X DELETE https://api-{{ cookiecutter.project_slug }}.local/api/v1/todos/1
+curl -X DELETE https://api-{{ cookiecutter.project_slug }}.dev.test/api/v1/todos/1
 
 # Health check
-curl https://api-{{ cookiecutter.project_slug }}.local/health
+curl https://api-{{ cookiecutter.project_slug }}.dev.test/health
 ```
 
 ## Production (Local Testing)
@@ -151,10 +273,14 @@ bun run dev
 ```
 {{ cookiecutter.project_slug }}/
 ├── frontend/
-│   ├── app/                 # Next.js App Router
-│   ├── components/          # React components
+│   ├── app/
+│   │   └── page.tsx         # Home page
+│   ├── components/
+│   │   ├── ui/              # shadcn/ui components
+│   │   └── header.tsx       # Navigation
 │   ├── hooks/               # React Query hooks
-│   └── lib/                 # API client + utilities
+│   ├── lib/                 # API client + utilities
+│   └── components.json      # shadcn/ui config
 ├── backend/
 │   ├── src/
 │   │   ├── main.py          # FastAPI app
@@ -178,8 +304,8 @@ bun run dev
 ### Development (with Traefik)
 ```
 Browser → Traefik (HTTPS)
-           ├── {{ cookiecutter.project_slug }}.local → frontend
-           └── api-{{ cookiecutter.project_slug }}.local → backend → db (internal)
+           ├── {{ cookiecutter.project_slug }}.dev.test → frontend
+           └── api-{{ cookiecutter.project_slug }}.dev.test → backend → db (internal)
 ```
 
 ### Production (without Traefik)
@@ -197,7 +323,7 @@ Internal: frontend → backend:{{ cookiecutter.backend_port }}
 ```bash
 SECRET_KEY=your-secret-key
 DATABASE_URL=mysql://user:password@db:3306/{{ cookiecutter.project_slug | replace('-', '_') }}
-FRONTEND_URL=https://{{ cookiecutter.project_slug }}.local
+FRONTEND_URL=https://{{ cookiecutter.project_slug }}.dev.test
 ```
 
 ### Backend Config (backend/config.toml)
@@ -208,7 +334,7 @@ debug = false
 
 [api]
 port = {{ cookiecutter.backend_port }}
-cors_origins = ["https://{{ cookiecutter.project_slug }}.local"]
+cors_origins = ["https://{{ cookiecutter.project_slug }}.dev.test"]
 ```
 
 ## License

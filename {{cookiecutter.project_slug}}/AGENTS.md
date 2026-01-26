@@ -166,3 +166,18 @@ After changes, verify:
 5. API responses match expected schemas
 
 </VERIFICATION>
+
+---
+<CHAT_UIS>
+When developing chat UI, use assistant-ui
+
+This project uses assistant-ui for chat interfaces.
+
+Documentation: https://www.assistant-ui.com/llms-full.txt
+
+Key patterns:
+- Use AssistantRuntimeProvider at the app root
+- Thread component for full chat interface
+- AssistantModal for floating chat widget
+- useChatRuntime hook with AI SDK transport
+</CHAT_UIS>
