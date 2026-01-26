@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FEATURES } from "@/lib/features";
-import { CopilotNavLink } from "./nav-links";
+import { CopilotNavLink, TodosNavLink, ComponentsNavLink } from "./nav-links";
 
 /**
  * Main header component.
@@ -16,7 +16,9 @@ export function Header() {
           <span className="text-xl font-bold">{{ cookiecutter.project_name }}</span>
         </Link>
 
-        <nav className="flex items-center gap-4">
+        <nav className="flex items-center gap-1">
+          <TodosNavLink />
+          <ComponentsNavLink />
           {FEATURES.copilot && <CopilotNavLink />}
           {/*
             To add authentication, run in frontend folder:

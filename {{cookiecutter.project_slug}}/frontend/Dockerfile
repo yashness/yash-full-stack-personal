@@ -15,6 +15,8 @@ COPY package.json bun.lockb* ./
 FROM base AS dev
 RUN bun install
 COPY . .
+# Create .next directory structure for dev logs
+RUN mkdir -p .next/dev/logs
 EXPOSE {{ cookiecutter.frontend_port }}
 CMD ["bun", "run", "dev"]
 

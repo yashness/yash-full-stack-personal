@@ -6,8 +6,8 @@
 
 export const FEATURES = {
   copilot: {% if cookiecutter.copilot_ui == "True" or cookiecutter.copilot_ui == true %}true{% else %}false{% endif %},
+  auth: {% if cookiecutter.no_auth == "False" or cookiecutter.no_auth == false %}true{% else %}false{% endif %},
   // Add more feature flags here as needed
-  // auth: {% if cookiecutter.no_auth == "False" or cookiecutter.no_auth == false %}true{% else %}false{% endif %},
 } as const;
 
 export type FeatureKey = keyof typeof FEATURES;

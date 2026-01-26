@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   ComposerPrimitive,
   useComposer,
@@ -8,13 +9,52 @@ import {
   Send,
   Square,
   Paperclip,
-  X,
 } from "lucide-react";
 
 /**
- * Chat composer with send and cancel support.
+ * Inner composer that uses the useComposer hook.
+ * Separated to handle React 19 SSR compatibility.
  */
-export function Composer() {
+function ComposerContent() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Only access the hook after mounting to avoid SSR hydration issues
+  if (!mounted) {
+    return (
+      <ComposerPrimitive.Root className="relative">
+        <div className="bg-muted/50 rounded-xl border border-border">
+          <div className="flex items-end gap-1 p-2">
+            <button className="p-2 rounded-lg text-muted-foreground" disabled>
+              <Paperclip className="w-5 h-5" />
+            </button>
+            <input
+              placeholder="Type a message..."
+              className="flex-1 bg-transparent border-0 min-h-[44px] py-2.5 px-2 text-sm"
+              disabled
+            />
+            <button className="p-2 rounded-lg bg-primary text-primary-foreground opacity-50" disabled>
+              <Send className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+        <div className="text-center text-xs text-muted-foreground mt-2">
+          Press Enter to send, Shift+Enter for new line
+        </div>
+      </ComposerPrimitive.Root>
+    );
+  }
+
+  return <ComposerWithHook />;
+}
+
+/**
+ * Composer that uses the hook - only rendered after mount.
+ */
+function ComposerWithHook() {
   const composer = useComposer();
   const isSubmitting = composer.isEditing === false && composer.isEmpty === false;
 
@@ -54,4 +94,12 @@ export function Composer() {
       </div>
     </ComposerPrimitive.Root>
   );
+}
+
+/**
+ * Chat composer with send and cancel support.
+ * Handles SSR hydration properly for React 19.
+ */
+export function Composer() {
+  return <ComposerContent />;
 }
