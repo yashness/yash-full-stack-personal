@@ -14,6 +14,27 @@ from .database import Base
 # =============================================================================
 
 
+class UserDB(Base):
+    """User database model - synced from Clerk via webhooks."""
+
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    clerk_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    first_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    subscription_plan: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    subscription_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+
 class TodoDB(Base):
     """Todo database model."""
 
