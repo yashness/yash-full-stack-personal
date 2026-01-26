@@ -40,11 +40,23 @@ class Settings(BaseSettings):
 
     secret_key: str = "change-me-in-production"
     database_url: str = "mysql://user:password@db:3306/{{ cookiecutter.project_slug | replace('-', '_') }}"
-    frontend_url: str = "https://{{ cookiecutter.project_slug }}.local"
+    frontend_url: str = "https://{{ cookiecutter.project_slug }}.dev.test"
+
+    # Clerk authentication (optional - run `bun run setup:clerk` in frontend first)
+    clerk_secret_key: str = ""
+    clerk_webhook_secret: str = ""
+
+    # Claude Agent SDK settings (for Copilot UI)
+    # These are read by claude-agent-sdk for Azure Foundry or direct API
+    anthropic_api_key: str = ""  # For direct Anthropic API
+    claude_code_use_foundry: str = ""  # Set to "1" for Azure Foundry
+    anthropic_foundry_resource: str = ""  # Azure Foundry resource name
+    anthropic_foundry_api_key: str = ""  # Azure Foundry API key
 
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"  # Ignore extra env vars not defined in the model
 
 
 def load_toml_config() -> dict:
