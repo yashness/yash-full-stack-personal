@@ -5,5 +5,16 @@
   "frontend_port": "3000",
   "backend_port": "8000",
   "use_frontend": true,
-  "use_backend": true
+  "use_backend": true,
+  "no_auth": false,
+  "copilot_ui": false,
+  "_copy_without_render": [
+    "frontend/app/providers.tsx",
+    "frontend/app/pricing/page.tsx",
+    "frontend/app/billing/page.tsx",
+    "frontend/components/billing-content.tsx",
+    "frontend/app/copilot/page.tsx",
+    "frontend/components/copilot-chat.tsx",
+    "frontend/app/api/chat/route.ts"
+  ]
 }
