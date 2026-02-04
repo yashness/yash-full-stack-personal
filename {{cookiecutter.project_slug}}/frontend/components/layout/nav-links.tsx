@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bot, CheckSquare, Layers } from "lucide-react";
+import {
+  Bot,
+  CheckSquare,
+  Layers,
+  LayoutGrid,
+  Workflow,
+  Wrench,
+  Sparkles,
+  CreditCard,
+  Settings,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -76,14 +86,145 @@ export function ComponentsNavLink() {
 }
 
 /**
- * Add more nav link components here as features are added.
- * Example:
- *
- * export function BillingNavLink() {
- *   return (
- *     <Link href="/billing" className="...">
- *       Billing
- *     </Link>
- *   );
- * }
+ * Canvas navigation link component.
+ * Only rendered when canvas feature is enabled.
  */
+export function CanvasNavLink() {
+  const pathname = usePathname();
+  const isActive = pathname === "/canvas";
+
+  return (
+    <Link
+      href="/canvas"
+      className={cn(
+        "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
+        isActive
+          ? "bg-primary/10 text-primary"
+          : "hover:bg-muted text-muted-foreground hover:text-foreground"
+      )}
+    >
+      <LayoutGrid className="w-4 h-4" />
+      Canvas
+    </Link>
+  );
+}
+
+/**
+ * Flow Builder navigation link component.
+ * Only rendered when flow builder feature is enabled.
+ */
+export function FlowBuilderNavLink() {
+  const pathname = usePathname();
+  const isActive = pathname === "/flow-builder";
+
+  return (
+    <Link
+      href="/flow-builder"
+      className={cn(
+        "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
+        isActive
+          ? "bg-primary/10 text-primary"
+          : "hover:bg-muted text-muted-foreground hover:text-foreground"
+      )}
+    >
+      <Workflow className="w-4 h-4" />
+      Flows
+    </Link>
+  );
+}
+
+/**
+ * MCP Creator navigation link component.
+ * Only rendered when MCP creator feature is enabled.
+ */
+export function McpCreatorNavLink() {
+  const pathname = usePathname();
+  const isActive = pathname === "/mcp-creator";
+
+  return (
+    <Link
+      href="/mcp-creator"
+      className={cn(
+        "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
+        isActive
+          ? "bg-primary/10 text-primary"
+          : "hover:bg-muted text-muted-foreground hover:text-foreground"
+      )}
+    >
+      <Wrench className="w-4 h-4" />
+      MCP Tools
+    </Link>
+  );
+}
+
+/**
+ * Skills/Agents navigation link component.
+ * Only rendered when skill creator feature is enabled.
+ */
+export function SkillsNavLink() {
+  const pathname = usePathname();
+  const isActive = pathname.startsWith("/skills") || pathname.startsWith("/agents");
+
+  return (
+    <Link
+      href="/skills"
+      className={cn(
+        "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
+        isActive
+          ? "bg-primary/10 text-primary"
+          : "hover:bg-muted text-muted-foreground hover:text-foreground"
+      )}
+    >
+      <Sparkles className="w-4 h-4" />
+      Skills
+    </Link>
+  );
+}
+
+/**
+ * Pricing navigation link component.
+ * Only rendered when pricing feature is enabled.
+ */
+export function PricingNavLink() {
+  const pathname = usePathname();
+  const isActive = pathname === "/pricing";
+
+  return (
+    <Link
+      href="/pricing"
+      className={cn(
+        "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
+        isActive
+          ? "bg-primary/10 text-primary"
+          : "hover:bg-muted text-muted-foreground hover:text-foreground"
+      )}
+    >
+      <CreditCard className="w-4 h-4" />
+      Pricing
+    </Link>
+  );
+}
+
+/**
+ * Admin navigation link component.
+ * Only rendered when admin feature is enabled.
+ */
+export function AdminNavLink() {
+  const pathname = usePathname();
+  const isActive = pathname.startsWith("/admin");
+
+  return (
+    <Link
+      href="/admin"
+      className={cn(
+        "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
+        isActive
+          ? "bg-primary/10 text-primary"
+          : "hover:bg-muted text-muted-foreground hover:text-foreground"
+      )}
+    >
+      <Settings className="w-4 h-4" />
+      Admin
+    </Link>
+  );
+}

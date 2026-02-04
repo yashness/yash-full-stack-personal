@@ -8,6 +8,12 @@
   "use_backend": true,
   "no_auth": false,
   "copilot_ui": true,
+  "include_canvas": false,
+  "include_flow_builder": false,
+  "include_mcp_creator": false,
+  "include_skill_creator": false,
+  "include_pricing": true,
+  "include_admin": false,
   "_copy_without_render": [
     "frontend/app/providers.tsx",
     "frontend/app/pricing/page.tsx",
