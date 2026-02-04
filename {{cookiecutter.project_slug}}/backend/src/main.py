@@ -16,14 +16,26 @@ from .migrations import run_migrations_sync_in_thread
 from .models import HealthResponse, WelcomeResponse
 from .routes import router
 from .webhooks import router as webhooks_router
-{% if cookiecutter.copilot_ui %}from .chat import router as chat_router{% endif %}
+
+# Conditionally import chat router based on feature flag
+settings = get_settings()
+if settings.feature_copilot:
+    try:
+        from .chat import router as chat_router
+        CHAT_ROUTER_AVAILABLE = True
+    except ImportError:
+        CHAT_ROUTER_AVAILABLE = False
+        logger.warning("Chat router not available - missing dependencies")
+else:
+    CHAT_ROUTER_AVAILABLE = False
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler."""
     setup_logging()
-    logger.info("Starting {{ cookiecutter.project_name }} API")
+    app_config, _, _ = get_config()
+    logger.info(f"Starting {app_config.name} API")
 
     # Run database migrations on startup
     try:
@@ -40,7 +52,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             logger.warning(f"Database initialization failed (running without DB): {e2}")
 
     yield
-    logger.info("Shutting down {{ cookiecutter.project_name }} API")
+    logger.info(f"Shutting down {app_config.name} API")
 
 
 def create_app() -> FastAPI:
@@ -65,7 +77,10 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(router, prefix="/api/v1")
     app.include_router(webhooks_router, prefix="/api")
-{% if cookiecutter.copilot_ui %}    app.include_router(chat_router, prefix="/api/v1"){% endif %}
+
+    # Conditionally include chat router based on feature flag
+    if CHAT_ROUTER_AVAILABLE:
+        app.include_router(chat_router, prefix="/api/v1")
 
     return app
 
@@ -87,6 +102,7 @@ async def root() -> WelcomeResponse:
 @app.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
     """Health check endpoint with database status."""
+    app_config, _, _ = get_config()
     db_status = "disconnected"
     try:
         async with async_engine.connect() as conn:
@@ -97,6 +113,6 @@ async def health() -> HealthResponse:
 
     return HealthResponse(
         status="healthy" if db_status == "connected" else "degraded",
-        service="{{ cookiecutter.project_slug }}-backend",
+        service=f"{app_config.name.lower().replace(' ', '-')}-backend",
         database=db_status,
     )

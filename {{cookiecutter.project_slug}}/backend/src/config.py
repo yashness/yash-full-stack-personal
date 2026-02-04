@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 
 import tomli
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
 
 
@@ -36,7 +36,11 @@ class LoggingConfig(BaseModel):
 
 
 class Settings(BaseSettings):
-    """Environment variables (secrets)."""
+    """Environment variables (secrets and feature flags).
+
+    Feature flags allow enabling/disabling features at runtime without
+    regenerating the project. Set these in your .env file or environment.
+    """
 
     secret_key: str = "change-me-in-production"
     database_url: str = "mysql://user:password@db:3306/{{ cookiecutter.project_slug | replace('-', '_') }}"
@@ -52,6 +56,16 @@ class Settings(BaseSettings):
     claude_code_use_foundry: str = ""  # Set to "1" for Azure Foundry
     anthropic_foundry_resource: str = ""  # Azure Foundry resource name
     anthropic_foundry_api_key: str = ""  # Azure Foundry API key
+
+    # Feature flags - control which features are enabled
+    feature_copilot: bool = Field(default=True, description="Enable AI copilot chat interface")
+    feature_auth: bool = Field(default=True, description="Enable authentication via Clerk")
+    feature_canvas: bool = Field(default=False, description="Enable agentic canvas interface")
+    feature_flow_builder: bool = Field(default=False, description="Enable visual flow builder")
+    feature_mcp_creator: bool = Field(default=False, description="Enable MCP creator")
+    feature_skill_creator: bool = Field(default=False, description="Enable skill/agent creator")
+    feature_pricing: bool = Field(default=True, description="Enable pricing/billing pages")
+    feature_admin: bool = Field(default=False, description="Enable admin dashboard")
 
     class Config:
         env_file = ".env"

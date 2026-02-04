@@ -96,7 +96,12 @@ class TodoDB(Base):
     )
 
 
-{% if cookiecutter.copilot_ui %}
+# =============================================================================
+# Copilot/Chat Models (Database)
+# These models are always present but only used when copilot feature is enabled
+# =============================================================================
+
+
 class ThreadDB(Base):
     """Chat thread database model for conversation history."""
 
@@ -188,7 +193,6 @@ class SessionDB(Base):
 
     # Relationships
     thread: Mapped["ThreadDB"] = relationship("ThreadDB", back_populates="session")
-{% endif %}
 
 
 # =============================================================================
@@ -258,9 +262,9 @@ class WelcomeResponse(BaseModel):
     docs: str
 
 
-{% if cookiecutter.copilot_ui %}
 # =============================================================================
 # Pydantic Models for Chat/Threads
+# These models are always present but only used when copilot feature is enabled
 # =============================================================================
 
 
@@ -353,4 +357,3 @@ class ChatStreamRequest(BaseModel):
     messages: list[ChatMessageCreate] | None = None  # For new messages
     continue_session: bool = True  # Load previous context from DB
     system: str | None = None  # System prompt override
-{% endif %}

@@ -1,53 +1,225 @@
 #!/usr/bin/env python
-"""Post-generation hook for cookiecutter template."""
+"""Post-generation hook for cookiecutter template.
+
+This hook:
+1. Generates .env files with feature flags based on cookiecutter options
+2. Removes directories/files for disabled features
+3. Makes scripts executable
+4. Initializes git repository
+"""
 
 import os
+import secrets
 import shutil
 import stat
 import subprocess
 
-# Cookiecutter context variables
+# Cookiecutter context variables - feature flags
 COPILOT_UI = "{{ cookiecutter.copilot_ui }}".lower() in ("true", "1", "yes")
+INCLUDE_CANVAS = "{{ cookiecutter.include_canvas }}".lower() in ("true", "1", "yes")
+INCLUDE_FLOW_BUILDER = "{{ cookiecutter.include_flow_builder }}".lower() in ("true", "1", "yes")
+INCLUDE_MCP_CREATOR = "{{ cookiecutter.include_mcp_creator }}".lower() in ("true", "1", "yes")
+INCLUDE_SKILL_CREATOR = "{{ cookiecutter.include_skill_creator }}".lower() in ("true", "1", "yes")
+INCLUDE_PRICING = "{{ cookiecutter.include_pricing }}".lower() in ("true", "1", "yes")
+INCLUDE_ADMIN = "{{ cookiecutter.include_admin }}".lower() in ("true", "1", "yes")
+NO_AUTH = "{{ cookiecutter.no_auth }}".lower() in ("true", "1", "yes")
+
+# Project metadata
+PROJECT_NAME = "{{ cookiecutter.project_name }}"
+PROJECT_SLUG = "{{ cookiecutter.project_slug }}"
+FRONTEND_PORT = "{{ cookiecutter.frontend_port }}"
+BACKEND_PORT = "{{ cookiecutter.backend_port }}"
 
 
-def remove_copilot_files():
-    """Remove copilot-related files if copilot_ui is disabled."""
-    if COPILOT_UI:
-        print("✓ Copilot UI enabled - keeping copilot files")
-        return
+def generate_secret_key() -> str:
+    """Generate a cryptographically secure random secret key."""
+    return secrets.token_urlsafe(32)
 
-    # Files to remove when copilot_ui is false
-    copilot_files = [
-        os.path.join("frontend", "app", "copilot", "page.tsx"),
-        os.path.join("frontend", "components", "copilot-chat.tsx"),
-        os.path.join("frontend", "app", "api", "chat", "route.ts"),
-        os.path.join("frontend", "lib", "chat-api.ts"),
-        os.path.join("frontend", "hooks", "use-chat-store.ts"),
-        os.path.join("backend", "src", "chat.py"),
-        os.path.join("backend", "src", "session_manager.py"),
-    ]
 
-    # Directories to remove when copilot_ui is false (order matters - children first)
-    copilot_dirs = [
-        os.path.join("frontend", "components", "copilot"),
-        os.path.join("frontend", "app", "copilot"),
-        os.path.join("frontend", "app", "api", "threads"),
-        os.path.join("frontend", "app", "api", "chat"),
-        os.path.join("frontend", "tests", "e2e"),
-    ]
+# Feature to directories/files mapping
+FEATURE_ARTIFACTS = {
+    "copilot": {
+        "files": [
+            os.path.join("frontend", "components", "copilot-chat.tsx"),
+            os.path.join("frontend", "lib", "chat-api.ts"),
+            os.path.join("frontend", "hooks", "use-chat-store.ts"),
+            os.path.join("backend", "src", "chat.py"),
+            os.path.join("backend", "src", "session_manager.py"),
+        ],
+        "dirs": [
+            os.path.join("frontend", "app", "copilot"),
+            os.path.join("frontend", "components", "copilot"),
+            os.path.join("frontend", "app", "api", "chat"),
+            os.path.join("frontend", "app", "api", "threads"),
+            os.path.join("frontend", "tests", "e2e"),
+        ],
+    },
+    "canvas": {
+        "files": [],
+        "dirs": [
+            os.path.join("frontend", "app", "canvas"),
+            os.path.join("frontend", "components", "canvas"),
+        ],
+    },
+    "flow_builder": {
+        "files": [],
+        "dirs": [
+            os.path.join("frontend", "app", "flow-builder"),
+            os.path.join("frontend", "components", "flow-builder"),
+        ],
+    },
+    "mcp_creator": {
+        "files": [],
+        "dirs": [
+            os.path.join("frontend", "app", "mcp-creator"),
+            os.path.join("frontend", "components", "mcp-creator"),
+        ],
+    },
+    "skill_creator": {
+        "files": [],
+        "dirs": [
+            os.path.join("frontend", "app", "agents"),
+            os.path.join("frontend", "app", "skills"),
+            os.path.join("frontend", "components", "agent-creator"),
+        ],
+    },
+    "pricing": {
+        "files": [
+            os.path.join("frontend", "components", "billing-content.tsx"),
+        ],
+        "dirs": [
+            os.path.join("frontend", "app", "pricing"),
+            os.path.join("frontend", "app", "billing"),
+        ],
+    },
+    "admin": {
+        "files": [],
+        "dirs": [
+            os.path.join("frontend", "app", "admin"),
+            os.path.join("frontend", "components", "admin"),
+        ],
+    },
+}
 
-    for filepath in copilot_files:
+
+def remove_feature_artifacts(feature_name: str):
+    """Remove files and directories for a disabled feature."""
+    artifacts = FEATURE_ARTIFACTS.get(feature_name, {})
+
+    # Remove individual files
+    for filepath in artifacts.get("files", []):
         if os.path.exists(filepath):
             os.remove(filepath)
             print(f"✓ Removed {filepath}")
 
     # Remove directories recursively
-    for dirpath in copilot_dirs:
+    for dirpath in artifacts.get("dirs", []):
         if os.path.exists(dirpath):
             shutil.rmtree(dirpath)
             print(f"✓ Removed directory {dirpath}")
 
-    print("✓ Copilot UI disabled - removed copilot files")
+
+def cleanup_disabled_features():
+    """Remove artifacts for disabled features."""
+    features_status = {
+        "copilot": COPILOT_UI,
+        "canvas": INCLUDE_CANVAS,
+        "flow_builder": INCLUDE_FLOW_BUILDER,
+        "mcp_creator": INCLUDE_MCP_CREATOR,
+        "skill_creator": INCLUDE_SKILL_CREATOR,
+        "pricing": INCLUDE_PRICING,
+        "admin": INCLUDE_ADMIN,
+    }
+
+    for feature, enabled in features_status.items():
+        if enabled:
+            print(f"✓ {feature.replace('_', ' ').title()} enabled")
+        else:
+            print(f"✗ {feature.replace('_', ' ').title()} disabled - removing files")
+            remove_feature_artifacts(feature)
+
+
+def generate_env_files():
+    """Generate .env files with feature flags."""
+    # Generate a secure random secret key for the backend
+    secret_key = generate_secret_key()
+
+    # Frontend .env.local
+    frontend_env_content = f"""# Frontend Environment Variables
+# Generated by cookiecutter template
+
+# Project Configuration
+NEXT_PUBLIC_PROJECT_NAME="{PROJECT_NAME}"
+
+# API URL
+NEXT_PUBLIC_API_URL=http://localhost:{BACKEND_PORT}
+
+# Feature Flags
+# Enable/disable features at runtime by changing these values
+NEXT_PUBLIC_FEATURE_COPILOT={"true" if COPILOT_UI else "false"}
+NEXT_PUBLIC_FEATURE_AUTH={"false" if NO_AUTH else "true"}
+NEXT_PUBLIC_FEATURE_CANVAS={"true" if INCLUDE_CANVAS else "false"}
+NEXT_PUBLIC_FEATURE_FLOW_BUILDER={"true" if INCLUDE_FLOW_BUILDER else "false"}
+NEXT_PUBLIC_FEATURE_MCP_CREATOR={"true" if INCLUDE_MCP_CREATOR else "false"}
+NEXT_PUBLIC_FEATURE_SKILL_CREATOR={"true" if INCLUDE_SKILL_CREATOR else "false"}
+NEXT_PUBLIC_FEATURE_PRICING={"true" if INCLUDE_PRICING else "false"}
+NEXT_PUBLIC_FEATURE_ADMIN={"true" if INCLUDE_ADMIN else "false"}
+
+# Clerk Authentication (if using)
+# NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+# CLERK_SECRET_KEY=
+"""
+
+    frontend_env_path = os.path.join("frontend", ".env.local")
+    with open(frontend_env_path, "w") as f:
+        f.write(frontend_env_content)
+    print(f"✓ Generated {frontend_env_path}")
+
+    # Backend .env
+    # Note: DATABASE_URL uses dev credentials that should be changed for production
+    backend_env_content = f"""# Backend Environment Variables
+# Generated by cookiecutter template
+
+# Security - This key was auto-generated. Keep it secret!
+SECRET_KEY={secret_key}
+
+# Database - DEVELOPMENT ONLY credentials, matches docker-compose.dev.yml
+# For production, use a secure database with proper credentials
+DATABASE_URL=mysql://user:password@db:3306/{PROJECT_SLUG.replace("-", "_")}
+
+# Frontend URL (for CORS)
+FRONTEND_URL=https://{PROJECT_SLUG}.dev.test
+
+# Feature Flags
+# Enable/disable features at runtime by changing these values
+FEATURE_COPILOT={"true" if COPILOT_UI else "false"}
+FEATURE_AUTH={"false" if NO_AUTH else "true"}
+FEATURE_CANVAS={"true" if INCLUDE_CANVAS else "false"}
+FEATURE_FLOW_BUILDER={"true" if INCLUDE_FLOW_BUILDER else "false"}
+FEATURE_MCP_CREATOR={"true" if INCLUDE_MCP_CREATOR else "false"}
+FEATURE_SKILL_CREATOR={"true" if INCLUDE_SKILL_CREATOR else "false"}
+FEATURE_PRICING={"true" if INCLUDE_PRICING else "false"}
+FEATURE_ADMIN={"true" if INCLUDE_ADMIN else "false"}
+
+# Clerk Authentication (optional)
+# Run 'bun run setup:clerk' in frontend to install Clerk
+CLERK_SECRET_KEY=
+CLERK_WEBHOOK_SECRET=
+
+# Claude Agent SDK (for Copilot UI)
+# For direct Anthropic API:
+ANTHROPIC_API_KEY=
+
+# For Azure Foundry:
+# CLAUDE_CODE_USE_FOUNDRY=1
+# ANTHROPIC_FOUNDRY_RESOURCE=
+# ANTHROPIC_FOUNDRY_API_KEY=
+"""
+
+    backend_env_path = os.path.join("backend", ".env")
+    with open(backend_env_path, "w") as f:
+        f.write(backend_env_content)
+    print(f"✓ Generated {backend_env_path}")
 
 
 def make_scripts_executable():
@@ -75,20 +247,39 @@ def init_git_repository():
         print("⚠ Git not found, skipping repository initialization")
 
 
+def print_feature_summary():
+    """Print a summary of enabled features."""
+    print("\n📋 Feature Summary:")
+    print(f"   • Copilot UI: {'✓ Enabled' if COPILOT_UI else '✗ Disabled'}")
+    print(f"   • Authentication: {'✗ Disabled' if NO_AUTH else '✓ Enabled'}")
+    print(f"   • Agentic Canvas: {'✓ Enabled' if INCLUDE_CANVAS else '✗ Disabled'}")
+    print(f"   • Flow Builder: {'✓ Enabled' if INCLUDE_FLOW_BUILDER else '✗ Disabled'}")
+    print(f"   • MCP Creator: {'✓ Enabled' if INCLUDE_MCP_CREATOR else '✗ Disabled'}")
+    print(f"   • Skill/Agent Creator: {'✓ Enabled' if INCLUDE_SKILL_CREATOR else '✗ Disabled'}")
+    print(f"   • Pricing/Billing: {'✓ Enabled' if INCLUDE_PRICING else '✗ Disabled'}")
+    print(f"   • Admin Dashboard: {'✓ Enabled' if INCLUDE_ADMIN else '✗ Disabled'}")
+
+
 def main():
     """Run post-generation tasks."""
     print("\n🚀 Running post-generation setup...\n")
 
-    remove_copilot_files()
+    generate_env_files()
+    cleanup_disabled_features()
     make_scripts_executable()
     init_git_repository()
 
+    print_feature_summary()
+
     print("\n✅ Project setup complete!")
     print("\nNext steps:")
-    print("  1. cd {{ cookiecutter.project_slug }}")
-    print("  2. Copy .env.example files and add your secrets")
+    print(f"  1. cd {PROJECT_SLUG}")
+    print("  2. Review and update .env files with your secrets")
     print("  3. task setup")
     print("  4. task dev")
+    print("\nTo enable/disable features later, edit:")
+    print("  • frontend/.env.local - Frontend feature flags")
+    print("  • backend/.env - Backend feature flags")
 
 
 if __name__ == "__main__":
